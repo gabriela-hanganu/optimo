@@ -10,7 +10,8 @@
     "lint-staged": "lint-staged",
     "format": "prettier --check .",
     "format:fix": "prettier --write --list-different .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postcss": "postcss styles/globals.css -o styles/output.css"
   },
   "dependencies": {
     "@headlessui/react": "^2.1.9",
