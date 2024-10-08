@@ -11,6 +11,7 @@ describe('LoginForm', () => {
         expect(screen.getByText('Please log in to continue.')).toBeInTheDocument();
     });
 
+
     test('renders email input field', () => {
         render(<LoginForm onSubmit={jest.fn()} />);
         const emailInput = screen.getByLabelText('Email');
@@ -30,6 +31,7 @@ describe('LoginForm', () => {
     test('shows validation errors when fields are empty', () => {
         render(<LoginForm onSubmit={jest.fn()} />);
         const loginButton = screen.getByText('Log in');
+        console.log(loginButton);
         fireEvent.click(loginButton);
         expect(screen.getByText('Please fill out this field.')).toBeInTheDocument();
     });
