@@ -86,3 +86,30 @@ export type InvoiceForm = {
   amount: number;
   status: 'pending' | 'paid';
 };
+
+export type TimesheetEntry = {
+  id: number;
+  project: string;
+  mon: string;
+  tue: string;
+  wed: string;
+  thu: string;
+  fri: string;
+  total: string;
+}
+
+// Project allocation data type
+export type ProjectAllocation = {
+  id: number;
+  project: string;
+  allocation: string;
+  startDate: string;
+  endDate: string;
+}
+
+// Quick stats data type
+export type QuickStats = {
+  hoursThisWeek: number;
+  activeProjects: number;
+  pendingApprovals: number;
+}

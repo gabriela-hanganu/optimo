@@ -1,3 +1,11 @@
+
+// code generated with github copilot with multiple inputs:
+// * generate a simple login form with email and password inputs
+// * add validation for email and password
+// * add validation with react-hook-form
+// * add submit handler
+// * add routing to dashboard page
+
 import { lusitana } from '@/app/ui/fonts/fonts';
 import React from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -8,7 +16,7 @@ import {
 import { ArrowRightIcon } from '@heroicons/react/20/solid';
 import { Button } from './button';
 import ErrorMessage from './error-mesage';
-import {useRouter} from 'next/router';
+import { useRouter } from 'next/navigation';
 
 interface LoginFormProps {
   onSubmit: (data: { email: string; password: string }) => void;
@@ -29,8 +37,8 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
   };
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit(onSubmitHandler)}>
-      <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
+    <form className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center" onSubmit={handleSubmit(onSubmitHandler)}>
+      <div className="w-full max-w-md">
         <h1 className={`${lusitana.className} mb-3 text-2xl`}>
           Please log in to continue.
         </h1> 
