@@ -33,10 +33,6 @@ export default function Page() {
         </button>
       </div>
 
-      <div className="flex-grow container mx-auto px-4 flex items-center justify-center">
-        <CustomersTable customers={[]} />
-      </div>
-
     </main>
   );
 }

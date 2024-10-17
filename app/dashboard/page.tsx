@@ -1,245 +1,410 @@
-
-// code generated with v0.dev vercel from https://v0.dev/chat with multiple inputs:
-// https://v0.dev/chat/tsLDCL95ZDD
-// * redesign the page starting from the image in nextjs /react
-// * add modal
-// * redesign the page starting from the image adding the posibility to sign up
-// * can you optimize the code ? // failed to optimize 100%
-// * can you generate code using next react and tailwind ? 
-// * generate a dashboard page for a user to display timesheet reports, project allocations, and other functionalities similar with Open Air
-// * please modify the code so will be optimized splitted into separated files per section // failed to split into separated files per section
-// * generate a dashboard page for a user to display timesheet reports, project allocations, and other functionalities similar with Open Air but using a blue header and colored icons
-// * please use dynamic data for all tables
-
 'use client'
-import { useState } from 'react'
+
+import { useState, useEffect, useMemo } from 'react'
+import { 
+  BarChart, 
+  Clock, 
+  Calendar, 
+  Users, 
+  FileText, 
+  Settings, 
+  LogOut,
+  Menu,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Search
+} from 'lucide-react'
 import Image from 'next/image'
-import { Bell, Settings, ChevronDown, Search, ArrowRight, X, Calendar } from 'lucide-react'
+
+// Timesheet data type
+type TimesheetEntry = {
+  id: number;
+  project: string;
+  mon: string;
+  tue: string;
+  wed: string;
+  thu: string;
+  fri: string;
+  total: string;
+}
+
+// Project allocation data type
+type ProjectAllocation = {
+  id: number;
+  project: string;
+  allocation: string;
+  startDate: string;
+  endDate: string;
+}
+
+// Quick stats data type
+type QuickStats = {
+  hoursThisWeek: number;
+  activeProjects: number;
+  pendingApprovals: number;
+}
+
+// Simulated API calls
+const fetchTimesheetData = (): Promise<TimesheetEntry[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([
+        { id: 1, project: "Project Alpha", mon: "4h", tue: "3.5h", wed: "4h", thu: "3h", fri: "2h", total: "16.5h" },
+        { id: 2, project: "Project Beta", mon: "2h", tue: "4h", wed: "3h", thu: "4h", fri: "2h", total: "15h" },
+        { id: 3, project: "Project Gamma", mon: "1h", tue: "2h", wed: "3h", thu: "2h", fri: "4h", total: "12h" },
+        { id: 4, project: "Project Delta", mon: "3h", tue: "3h", wed: "3h", thu: "3h", fri: "3h", total: "15h" },
+      ]);
+    }, 500);
+  });
+};
+
+const fetchProjectData = (): Promise<ProjectAllocation[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([
+        { id: 1, project: "Project Alpha", allocation: "50%", startDate: "01/01/2023", endDate: "31/12/2023" },
+        { id: 2, project: "Project Beta", allocation: "30%", startDate: "01/03/2023", endDate: "31/08/2023" },
+        { id: 3, project: "Project Gamma", allocation: "20%", startDate: "01/06/2023", endDate: "31/12/2023" },
+        { id: 4, project: "Project Delta", allocation: "40%", startDate: "01/04/2023", endDate: "30/09/2023" },
+      ]);
+    }, 500);
+  });
+};
+
+const fetchQuickStats = (): Promise<QuickStats> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        hoursThisWeek: 35.5,
+        activeProjects: 4,
+        pendingApprovals: 2,
+      });
+    }, 500);
+  });
+};
 
 export default function Dashboard() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [timesheetSearch, setTimesheetSearch] = useState('')
+  const [timesheetSort, setTimesheetSort] = useState({ column: '', direction: '' })
+  const [projectSearch, setProjectSearch] = useState('')
+  const [projectSort, setProjectSort] = useState({ column: '', direction: '' })
+  const [timesheetData, setTimesheetData] = useState<TimesheetEntry[]>([])
+  const [projectData, setProjectData] = useState<ProjectAllocation[]>([])
+  const [quickStats, setQuickStats] = useState<QuickStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [timesheet, projects, stats] = await Promise.all([
+          fetchTimesheetData(),
+          fetchProjectData(),
+          fetchQuickStats()
+        ]);
+        setTimesheetData(timesheet);
+        setProjectData(projects);
+        setQuickStats(stats);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Filter and sort timesheet data
+  const filteredTimesheetData = useMemo(() => {
+    return timesheetData
+      .filter(entry => entry.project.toLowerCase().includes(timesheetSearch.toLowerCase()))
+      .sort((a, b) => {
+        if (timesheetSort.column === '') return 0
+        const aValue = a[timesheetSort.column as keyof TimesheetEntry]
+        const bValue = b[timesheetSort.column as keyof TimesheetEntry]
+        return timesheetSort.direction === 'asc' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue))
+      })
+  }, [timesheetData, timesheetSearch, timesheetSort])
+
+  // Filter and sort project data
+  const filteredProjectData = useMemo(() => {
+    return projectData
+      .filter(entry => entry.project.toLowerCase().includes(projectSearch.toLowerCase()))
+      .sort((a, b) => {
+        if (projectSort.column === '') return 0
+        const aValue = a[projectSort.column as keyof ProjectAllocation]
+        const bValue = b[projectSort.column as keyof ProjectAllocation]
+        return projectSort.direction === 'asc' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue))
+      })
+  }, [projectData, projectSearch, projectSort])
+
+  const handleSort = (table: 'timesheet' | 'project', column: keyof TimesheetEntry | keyof ProjectAllocation) => {
+    if (table === 'timesheet') {
+      setTimesheetSort(prev => ({
+        column,
+        direction: prev.column === column && prev.direction === 'asc' ? 'desc' : 'asc'
+      }))
+    } else {
+      setProjectSort(prev => ({
+        column,
+        direction: prev.column === column && prev.direction === 'asc' ? 'desc' : 'asc'
+      }))
+    }
+  }
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-indigo-700 text-white p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Image src="/placeholder.svg?height=32&width=32" alt="Casama logo" width={32} height={32} className="rounded-full" />
-            <nav>
-              <ul className="flex space-x-4">
-                <li><a href="#" className="hover:text-indigo-200">Dashboard</a></li>
-                <li><a href="#" className="hover:text-indigo-200">Browse Pools</a></li>
-              </ul>
-            </nav>
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <aside className={`bg-blue-700 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition duration-200 ease-in-out`}>
+        <nav>
+          <div className="flex items-center justify-between mb-6 px-4">
+            <span className="text-2xl font-semibold">TimeTrack</span>
+            <button onClick={toggleSidebar} className="md:hidden">
+              <X size={24} />
+            </button>
           </div>
-          <div className="flex items-center space-x-4">
-            <Bell size={20} />
-            <Settings size={20} />
-            <div className="flex items-center space-x-2">
-              <Image src="/placeholder.svg?height=32&width=32" alt="User avatar" width={32} height={32} className="rounded-full" />
-              <span>Timothy B.</span>
-              <ChevronDown size={16} />
-            </div>
-          </div>
-        </div>
-      </header>
+          <a href="#" className="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-600 hover:text-white">
+            <Clock className="inline-block mr-2 text-yellow-400" size={20} /> Timesheets
+          </a>
+          <a href="#" className="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-600 hover:text-white">
+            <BarChart className="inline-block mr-2 text-green-400" size={20} /> Reports
+          </a>
+          <a href="#" className="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-600 hover:text-white">
+            <Calendar className="inline-block mr-2 text-red-400" size={20} /> Schedule
+          </a>
+          <a href="#" className="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-600 hover:text-white">
+            <Users className="inline-block mr-2 text-purple-400" size={20} /> Projects
+          </a>
+          <a href="#" className="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-600 hover:text-white">
+            <FileText className="inline-block mr-2 text-orange-400" size={20} /> Invoices
+          </a>
+          <a href="#" className="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-600 hover:text-white">
+            <Settings className="inline-block mr-2 text-pink-400" size={20} /> Settings
+          </a>
+        </nav>
+      </aside>
 
       {/* Main Content */}
-      <main className="container mx-auto p-4">
-        {/* Greeting Section */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Hello Timothy,</h1>
-            <p className="text-gray-600">This is what we have for you today</p>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top bar */}
+        <header className="bg-blue-600 shadow-md">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center">
+              <button onClick={toggleSidebar} className="text-white focus:outline-none focus:text-blue-200 md:hidden">
+                <Menu size={24} />
+              </button>
+              <h2 className="text-xl font-semibold text-white ml-4">Dashboard</h2>
+            </div>
+            <div className="flex items-center">
+              <div className="relative">
+                <button className="flex items-center text-white hover:text-blue-200 focus:outline-none">
+                  <Image 
+                    src="/placeholder.svg?height=32&width=32" 
+                    alt="User avatar" 
+                    width={32} 
+                    height={32} 
+                    className="rounded-full"
+                  />
+                  <span className="ml-2">John Doe</span>
+                  <ChevronDown size={16} className="ml-1" />
+                </button>
+                {/* Dropdown menu would go here */}
+              </div>
+              <a href="#" className="ml-4 text-white hover:text-blue-200">
+                <LogOut size={20} />
+              </a>
+            </div>
           </div>
-          <button 
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-            onClick={() => setIsModalOpen(true)}
-          >
-            Create Pool
-          </button>
-        </div>
+        </header>
 
-        {/* Balance Section */}
-        <div className="bg-indigo-600 text-white p-6 rounded-lg mb-8">
-          <h2 className="text-xl mb-4">Balance</h2>
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="text-4xl font-bold">$12,223</p>
-              <ul className="mt-2">
-                <li>$14,552 Total Income</li>
-                <li>$11,883 Earned</li>
-                <li>$2,668 Expenses</li>
-              </ul>
-            </div>
-            <div className="text-right">
-              <p>Market Cap</p>
-              <p className="text-2xl font-bold">$12,223</p>
-            </div>
-          </div>
-          <div className="mt-4 h-2 bg-indigo-400 rounded-full">
-            <div className="h-full w-3/4 bg-pink-400 rounded-full"></div>
-          </div>
-        </div>
-
-        {/* Public Pools Section */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Public</h2>
-            <div className="relative">
-              <input type="text" placeholder="Search" className="pl-8 pr-4 py-2 rounded-md border border-gray-300" />
-              <Search size={20} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            </div>
-          </div>
-          <div className="space-y-4">
-            {['Polkadot into Vechain', 'Solana into Polygon Matic', 'Let\'s BNB into Avalanche'].map((pool, index) => (
-              <div key={index} className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 rounded-md flex items-center justify-center text-white ${index === 0 ? 'bg-pink-500' : index === 1 ? 'bg-yellow-500' : 'bg-orange-500'}`}>
-                    {pool.slice(0, 2)}
+        {/* Content */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+          <div className="container mx-auto px-6 py-8">
+            <h3 className="text-gray-700 text-3xl font-medium">Welcome back, John</h3>
+            
+            {/* Quick Stats */}
+            {quickStats && (
+              <div className="mt-4">
+                <div className="flex flex-wrap -mx-6">
+                  <div className="w-full px-6 sm:w-1/2 xl:w-1/3">
+                    <div className="flex items-center px-5 py-6 shadow-sm rounded-md bg-white">
+                      <div className="p-3 rounded-full bg-blue-600 bg-opacity-75">
+                        <Clock className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="mx-5">
+                        <h4 className="text-2xl font-semibold text-gray-700">{quickStats.hoursThisWeek}h</h4>
+                        <div className="text-gray-500">Hours This Week</div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold">{pool}</p>
-                    <div className="w-32 bg-gray-200 rounded-full h-2">
-                      <div className={`bg-${index === 0 ? 'pink' : index === 1 ? 'yellow' : 'orange'}-500 h-2 rounded-full`} style={{width: `${[95, 52, 24][index]}%`}}></div>
+                  <div className="w-full mt-6 px-6 sm:w-1/2 xl:w-1/3 sm:mt-0">
+                    <div className="flex items-center px-5 py-6 shadow-sm rounded-md bg-white">
+                      <div className="p-3 rounded-full bg-green-600 bg-opacity-75">
+                        <Users className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="mx-5">
+                        <h4 className="text-2xl font-semibold text-gray-700">{quickStats.activeProjects}</h4>
+                        <div className="text-gray-500">Active Projects</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full mt-6 px-6 sm:w-1/2 xl:w-1/3 xl:mt-0">
+                    <div className="flex items-center px-5 py-6 shadow-sm rounded-md bg-white">
+                      <div className="p-3 rounded-full bg-pink-600 bg-opacity-75">
+                        <FileText className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="mx-5">
+                        <h4 className="text-2xl font-semibold text-gray-700">{quickStats.pendingApprovals}</h4>
+                        <div className="text-gray-500">Pending Approvals</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <p className="font-bold">${[15, 18, 21][index] + ',000'}</p>
-                  <div className="flex -space-x-1">
-                    {['AG', 'JS', 'TR', 'RJ'].map((initial, i) => (
-                      <div key={i} className={`w-6 h-6 rounded-full bg-${['pink', 'blue', 'yellow', 'indigo'][i]}-400 flex items-center justify-center text-white text-xs`}>
-                        {initial}
+              </div>
+            )}
+            
+            {/* Timesheet Summary */}
+            <div className="mt-8">
+              <h4 className="text-gray-600">This Week's Timesheet</h4>
+              <div className="mt-4">
+                <div className="flex flex-col">
+                  <div className="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+                    <div className="align-middle inline-block min-w-full shadow overflow-hidden sm:rounded-lg border-b border-gray-200">
+                      <div className="bg-white p-4 flex justify-between items-center">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Search projects..."
+                            className="border rounded-md pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={timesheetSearch}
+                            onChange={(e) => setTimesheetSearch(e.target.value)}
+                          />
+                          <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                        </div>
                       </div>
-                    ))}
+                      <table className="min-w-full">
+                        <thead>
+                          <tr>
+                            {['project', 'mon', 'tue', 'wed', 'thu', 'fri',   'total'].map((column) => (
+                              <th
+                                key={column}
+                                className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                onClick={() => handleSort('timesheet', column)}
+                              >
+                                {column.charAt(0).toUpperCase() + column.slice(1)}
+                                {timesheetSort.column === column && (
+                                  timesheetSort.direction === 'asc' ? <ChevronUp className="inline ml-1" size={14} /> : <ChevronDown className="inline ml-1" size={14} />
+                                )}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white">
+                          {filteredTimesheetData.map((entry) => (
+                            <tr key={entry.id}>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 font-medium text-gray-900">{entry.project}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 text-gray-500">{entry.mon}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 text-gray-500">{entry.tue}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 text-gray-500">{entry.wed}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 text-gray-500">{entry.thu}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 text-gray-500">{entry.fri}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 font-medium text-gray-900">
+                                {entry.total}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Image src="/placeholder.svg?height=24&width=24" alt="Cake icon" width={24} height={24} />
-                    <span>8 cakes left</span>
-                  </div>
-                  <button className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700">
-                    Join
-                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Trending Section */}
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Trending</h2>
-            <button className="text-indigo-600 flex items-center">
-              See more <ArrowRight size={16} className="ml-1" />
-            </button>
-          </div>
-          <div className="bg-indigo-800 text-white p-4 rounded-lg" style={{backgroundImage: 'url(/placeholder.svg?height=200&width=400)', backgroundSize: 'cover', backgroundPosition: 'center'}}>
-            <div className="flex justify-between items-start">
-              <div className="flex items-center space-x-2">
-                <Image src="/placeholder.svg?height=24&width=24" alt="Cake icon" width={24} height={24} />
-                <span>8 cakes left</span>
+            </div>
+            
+            {/* Project Allocations */}
+            <div className="mt-8">
+              <h4 className="text-gray-600">Project Allocations</h4>
+              <div className="mt-4">
+                <div className="flex flex-col">
+                  <div className="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+                    <div className="align-middle inline-block min-w-full shadow overflow-hidden sm:rounded-lg border-b border-gray-200">
+                      <div className="bg-white p-4 flex justify-between items-center">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Search projects..."
+                            className="border rounded-md pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={projectSearch}
+                            onChange={(e) => setProjectSearch(e.target.value)}
+                          />
+                          <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                        </div>
+                      </div>
+                      <table className="min-w-full">
+                        <thead>
+                          <tr>
+                            {['project', 'allocation', 'startDate', 'endDate'].map((column) => (
+                              <th
+                                key={column}
+                                className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                onClick={() => handleSort('project', column)}
+                              >
+                                {column === 'startDate' ? 'Start Date' : column === 'endDate' ? 'End Date' : column.charAt(0).toUpperCase() + column.slice(1)}
+                                {projectSort.column === column && (
+                                  projectSort.direction === 'asc' ? <ChevronUp className="inline ml-1" size={14} /> : <ChevronDown className="inline ml-1" size={14} />
+                                )}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white">
+                          {filteredProjectData.map((entry) => (
+                            <tr key={entry.id}>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 font-medium text-gray-900">{entry.project}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 text-gray-500">{entry.allocation}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 text-gray-500">{entry.startDate}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                                <div className="text-sm leading-5 text-gray-500">{entry.endDate}</div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <button className="bg-white text-indigo-800 px-3 py-1 rounded-md text-sm hover:bg-indigo-100">
-                Join
-              </button>
             </div>
           </div>
-        </div>
-      </main>
-
-      {/* Create Pool Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Create a pool</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700">
-                <X size={24} />
-              </button>
-            </div>
-            <p className="text-gray-600 mb-4">Step 2 of 3 | Voting Rules</p>
-            <form>
-              <div className="mb-4">
-                <label className="flex items-center justify-between">
-                  <span className="text-lg font-medium">Votings</span>
-                  <input type="checkbox" className="form-checkbox h-5 w-5 text-indigo-600" />
-                </label>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duration of voting</label>
-                <div className="flex space-x-2">
-                  {['6h', '24h', '3 days'].map((duration) => (
-                    <button
-                      key={duration}
-                      type="button"
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      {duration}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    <Calendar size={16} />
-                    <span className="ml-1">Custom date</span>
-                  </button>
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">How many % is minimum need to win</label>
-                <div className="flex items-center">
-                  <input
-                    type="text"
-                    className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="51%"
-                  />
-                  <button
-                    type="button"
-                    className="ml-2 px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    <Calendar size={16} />
-                    <span className="ml-1">Custom date</span>
-                  </button>
-                </div>
-              </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Min number of members that have to vote</label>
-                <select className="form-select block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                  <option>50 members</option>
-                  {/* Add more options as needed */}
-                </select>
-              </div>
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <div>
-                  <button
-                    type="button"
-                    className="mr-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </main>
+      </div>
     </div>
   )
 }
